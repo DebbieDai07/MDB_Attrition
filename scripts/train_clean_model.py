@@ -27,19 +27,50 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(PLOTS_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+HF_DATASET_REPO = "Saravanan1999/MDBAttrition"
+
+
+def get_data_file(filename: str) -> str:
+    """
+    Return a local path to the requested data file.
+
+    Preference order:
+    1) Local 'data/' directory (if present)
+    2) Download from Hugging Face dataset repo.
+    """
+    local_path = os.path.join("data", filename)
+    if os.path.exists(local_path):
+        return local_path
+
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError as e:
+        raise ImportError(
+            "Please install `huggingface_hub` to download data from Hugging Face "
+            "(pip install huggingface_hub)."
+        ) from e
+
+    return hf_hub_download(
+        repo_id=HF_DATASET_REPO,
+        filename=filename,
+        repo_type="dataset",
+    )
+
 def main():
     print("="*70)
     print("TRAINING CLEAN MODEL WITH MEANINGFUL FEATURES ONLY")
     print("="*70)
     
-    # Load original data
+    # Load clean data (from local 'data/' or Hugging Face)
     print("\n[1] Loading data...")
-    train_df = pd.read_csv('churn_detection/datasets/features_v3/train_enhanced.csv')
-    test_df = pd.read_csv('churn_detection/datasets/features_v3/test_enhanced.csv')
+    train_df = pd.read_csv(get_data_file("train_clean.csv"))
+    test_df = pd.read_csv(get_data_file("test_clean.csv"))
     
-    with open('churn_detection/datasets/features_v3/feature_columns_enhanced.txt', 'r') as f:
-        all_features = [line.strip() for line in f if line.strip()]
-    all_features = [c for c in all_features if c in train_df.columns]
+    all_features = [
+        c
+        for c in train_df.columns
+        if c not in ["client_id", "reference_month", "churned"]
+    ]
     
     print(f"  Original features: {len(all_features)}")
     print(f"  Train samples: {len(train_df):,}")

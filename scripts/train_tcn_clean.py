@@ -21,13 +21,41 @@ plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['font.size'] = 11
 
 # Directories
-DATA_DIR = 'churn_detection/datasets/features_clean'
 OUTPUT_DIR = 'churn_detection/datasets/tcn_clean'
 PLOTS_DIR = 'churn_detection/tcn_shap_images'
 MODEL_DIR = 'saved_models'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(PLOTS_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
+
+HF_DATASET_REPO = "Saravanan1999/MDBAttrition"
+
+
+def get_data_file(filename: str) -> str:
+    """
+    Return a local path to the requested data file.
+
+    Preference order:
+    1) Local 'data/' directory (if present)
+    2) Download from Hugging Face dataset repo.
+    """
+    local_path = os.path.join("data", filename)
+    if os.path.exists(local_path):
+        return local_path
+
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError as e:
+        raise ImportError(
+            "Please install `huggingface_hub` to download data from Hugging Face "
+            "(pip install huggingface_hub)."
+        ) from e
+
+    return hf_hub_download(
+        repo_id=HF_DATASET_REPO,
+        filename=filename,
+        repo_type="dataset",
+    )
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -142,13 +170,16 @@ def main():
     print("TRAINING TCN ON CLEAN DATASET")
     print("="*70)
     
-    # Load clean data
+    # Load clean data (from local 'data/' or Hugging Face)
     print("\n[1] Loading clean dataset...")
-    train_df = pd.read_csv(f'{DATA_DIR}/train_clean.csv')
-    test_df = pd.read_csv(f'{DATA_DIR}/test_clean.csv')
+    train_df = pd.read_csv(get_data_file("train_clean.csv"))
+    test_df = pd.read_csv(get_data_file("test_clean.csv"))
     
-    with open(f'{DATA_DIR}/feature_columns_clean.txt', 'r') as f:
-        feature_cols = [line.strip() for line in f if line.strip()]
+    feature_cols = [
+        c
+        for c in train_df.columns
+        if c not in ["client_id", "reference_month", "churned"]
+    ]
     
     print(f"  Train: {len(train_df):,} samples")
     print(f"  Test: {len(test_df):,} samples")
@@ -308,7 +339,7 @@ def main():
     # Permutation importance
     importance_scores = []
     
-    test_df_orig = pd.read_csv(f'{DATA_DIR}/test_clean.csv')
+    test_df_orig = pd.read_csv(get_data_file("test_clean.csv"))
     test_df_orig[feature_cols] = (test_df_orig[feature_cols] - mean) / std
     
     for i, feat in enumerate(feature_cols):
