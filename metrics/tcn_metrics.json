@@ -1,0 +1,18 @@
+{
+  "n_features": 62,
+  "train_auc": 0.9361867139715829,
+  "val_auc": 0.9268024850681563,
+  "test_auc": 0.9121788509599015,
+  "test_f1": 0.6088888888888889,
+  "test_precision": 0.5387337790011797,
+  "test_recall": 0.7000510986203372,
+  "optimal_threshold": 0.47470152378082275,
+  "config": {
+    "hidden_dim": 64,
+    "num_layers": 3,
+    "kernel_size": 3,
+    "dropout": 0.3,
+    "lr": 0.001,
+    "weight_decay": 0.01
+  }
+}
