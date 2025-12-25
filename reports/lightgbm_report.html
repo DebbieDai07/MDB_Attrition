@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LightGBM Model & SHAP Analysis Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .confusion-matrix {
+            display: grid;
+            grid-template-columns: auto 1fr 1fr;
+            gap: 10px;
+            max-width: 400px;
+            margin: 20px auto;
+            font-size: 1.1em;
+        }
+        .cm-cell {
+            padding: 15px;
+            text-align: center;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .cm-header {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        .cm-tn { background-color: #2ecc71; color: white; }
+        .cm-fp { background-color: #f39c12; color: white; }
+        .cm-fn { background-color: #e74c3c; color: white; }
+        .cm-tp { background-color: #27ae60; color: white; }
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .feature-table th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .feature-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .feature-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .feature-name {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .rank {
+            font-weight: bold;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        .group-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .group-current { background-color: #e3f2fd; color: #1976d2; }
+        .group-recent { background-color: #f3e5f5; color: #7b1fa2; }
+        .group-advanced { background-color: #fff3e0; color: #e65100; }
+        .group-geo { background-color: #e8f5e9; color: #388e3c; }
+        .group-dialog { background-color: #fce4ec; color: #c2185b; }
+        .summary-box {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4caf50;
+        }
+        .warning-box {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ff9800;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .bar-chart {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .bar-label {
+            width: 200px;
+            font-weight: bold;
+        }
+        .bar-container {
+            flex: 1;
+            background-color: #ecf0f1;
+            height: 30px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>LightGBM Model & SHAP Analysis Report</h1>
+    <p><strong>Dataset:</strong> V3 Enhanced (71 features) | <strong>Model:</strong> LightGBM Gradient Boosting | <strong>Date:</strong> 2024</p>
+
+    <!-- MODEL PERFORMANCE -->
+    <div class="section">
+        <h2>Model Performance</h2>
+        
+        <div class="info-box">
+            <strong>Dataset Information:</strong><br>
+            Train: 202,357 samples (9.25% churn) | Test: 34,160 samples (9.84% churn)<br>
+            Features: 71 | Positive Class Weight: 9.81 | Optimal Threshold: 0.337
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">AUC-ROC</div>
+                <div class="metric-value">0.9138</div>
+                <div class="metric-label">Excellent discrimination</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Precision</div>
+                <div class="metric-value">0.5025</div>
+                <div class="metric-label">50.25% of predicted churners actually churn</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Recall</div>
+                <div class="metric-value">0.6830</div>
+                <div class="metric-label">68.30% of churners identified</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">F1 Score</div>
+                <div class="metric-value">0.5790</div>
+                <div class="metric-label">Balanced performance metric</div>
+            </div>
+        </div>
+
+        <h3>Confusion Matrix</h3>
+        <div class="confusion-matrix">
+            <div></div>
+            <div class="cm-cell cm-header">Predicted: No Churn</div>
+            <div class="cm-cell cm-header">Predicted: Churn</div>
+            
+            <div class="cm-cell cm-header">Actual: No Churn</div>
+            <div class="cm-cell cm-tn">28,528<br><small>True Negatives</small></div>
+            <div class="cm-cell cm-fp">2,272<br><small>False Positives</small></div>
+            
+            <div class="cm-cell cm-header">Actual: Churn</div>
+            <div class="cm-cell cm-fn">1,065<br><small>False Negatives</small></div>
+            <div class="cm-cell cm-tp">2,295<br><small>True Positives</small></div>
+        </div>
+
+        <div class="summary-box">
+            <strong>Performance Summary:</strong> The model achieves strong discrimination (AUC-ROC 0.91) with balanced precision and recall. 
+            At the optimal threshold of 0.337, the model correctly identifies 68.3% of churners while maintaining 50.3% precision, 
+            meaning half of predicted churners actually churn. The model makes 2,295 correct churn predictions out of 3,360 actual churners.
+        </div>
+    </div>
+
+    <!-- FEATURE IMPORTANCE (GAIN) -->
+    <div class="section">
+        <h2>Feature Importance (Gain-based)</h2>
+        <p>Feature importance measured by total gain across all splits. Higher values indicate features that contribute more to reducing loss.</p>
+        
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Feature Name</th>
+                    <th>Importance (Gain)</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="rank">1</td>
+                    <td class="feature-name">curr_trx_amount_std</td>
+                    <td>559,889</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">2</td>
+                    <td class="feature-name">curr_trx_days_active</td>
+                    <td>246,824</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">3</td>
+                    <td class="feature-name">curr_vs_recent_ratio</td>
+                    <td>187,009</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">4</td>
+                    <td class="feature-name">curr_trx_count</td>
+                    <td>109,821</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">5</td>
+                    <td class="feature-name">recent_trx_days_active</td>
+                    <td>15,298</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">6</td>
+                    <td class="feature-name">max_drawdown_count</td>
+                    <td>14,316</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">7</td>
+                    <td class="feature-name">recent_trx_count</td>
+                    <td>13,717</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">8</td>
+                    <td class="feature-name">recent_evening_ratio</td>
+                    <td>13,564</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">9</td>
+                    <td class="feature-name">recent_trx_event_types</td>
+                    <td>11,132</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">10</td>
+                    <td class="feature-name">stability_count</td>
+                    <td>10,525</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">11</td>
+                    <td class="feature-name">curr_trx_amount_sum</td>
+                    <td>10,116</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">12</td>
+                    <td class="feature-name">acceleration_count</td>
+                    <td>8,252</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">13</td>
+                    <td class="feature-name">momentum_count_2m</td>
+                    <td>4,531</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">14</td>
+                    <td class="feature-name">volatility_sum</td>
+                    <td>4,465</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">15</td>
+                    <td class="feature-name">recovery_count</td>
+                    <td>4,068</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">16</td>
+                    <td class="feature-name">trend_count_slope</td>
+                    <td>3,849</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">17</td>
+                    <td class="feature-name">recent_trx_amount_min</td>
+                    <td>3,709</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">18</td>
+                    <td class="feature-name">recent_trx_months_active</td>
+                    <td>2,705</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">19</td>
+                    <td class="feature-name">momentum_sum_2m</td>
+                    <td>2,513</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">20</td>
+                    <td class="feature-name">cv_count</td>
+                    <td>2,205</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">21</td>
+                    <td class="feature-name">trend_sum_r2</td>
+                    <td>2,131</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">22</td>
+                    <td class="feature-name">volatility_count</td>
+                    <td>1,803</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">23</td>
+                    <td class="feature-name">recent_trx_amount_cv</td>
+                    <td>1,800</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">24</td>
+                    <td class="feature-name">stability_sum</td>
+                    <td>1,406</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">25</td>
+                    <td class="feature-name">recent_trx_amount_std</td>
+                    <td>1,342</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Key Insights:</strong> Current month features dominate the top 4 positions, with <code>curr_trx_amount_std</code> being the most important feature. 
+            Advanced time-series features (drawdown, stability, momentum, volatility) contribute significantly, indicating that temporal patterns are crucial for churn prediction.
+        </div>
+    </div>
+
+    <!-- SHAP ANALYSIS -->
+    <div class="section">
+        <h2>SHAP Analysis</h2>
+        <p>SHAP (SHapley Additive exPlanations) values measure the average marginal contribution of each feature to the model's predictions. 
+        Mean absolute SHAP values indicate feature importance from a prediction explanation perspective.</p>
+
+        <h3>SHAP Summary Plot (Beeswarm)</h3>
+        <p>This plot shows the distribution of SHAP values for each feature. Each point represents a single prediction. 
+        The color indicates the feature value (red = high, blue = low), and the position shows the SHAP value's impact on the prediction.</p>
+        <img src="shap_plots/shap_summary_beeswarm.png" alt="SHAP Summary Beeswarm Plot" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>SHAP Summary Plot (Bar Chart)</h3>
+        <p>Mean absolute SHAP values for the top 25 features. This shows the average magnitude of each feature's contribution across all predictions.</p>
+        <img src="shap_plots/shap_summary_bar.png" alt="SHAP Summary Bar Plot" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>Top 25 Features by Mean Absolute SHAP Value</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Feature Name</th>
+                    <th>Mean |SHAP|</th>
+                    <th>Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="rank">1</td>
+                    <td class="feature-name">curr_trx_amount_std</td>
+                    <td>0.1990</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">2</td>
+                    <td class="feature-name">curr_trx_days_active</td>
+                    <td>0.1866</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">3</td>
+                    <td class="feature-name">curr_vs_recent_ratio</td>
+                    <td>0.1658</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">4</td>
+                    <td class="feature-name">curr_trx_count</td>
+                    <td>0.1021</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">5</td>
+                    <td class="feature-name">recent_trx_count</td>
+                    <td>0.0431</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">6</td>
+                    <td class="feature-name">curr_trx_amount_sum</td>
+                    <td>0.0354</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">7</td>
+                    <td class="feature-name">recent_evening_ratio</td>
+                    <td>0.0350</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">8</td>
+                    <td class="feature-name">recent_trx_event_types</td>
+                    <td>0.0332</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">9</td>
+                    <td class="feature-name">recent_trx_days_active</td>
+                    <td>0.0304</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">10</td>
+                    <td class="feature-name">stability_count</td>
+                    <td>0.0216</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">11</td>
+                    <td class="feature-name">max_drawdown_count</td>
+                    <td>0.0190</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">12</td>
+                    <td class="feature-name">momentum_count_2m</td>
+                    <td>0.0149</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">13</td>
+                    <td class="feature-name">volatility_sum</td>
+                    <td>0.0120</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">14</td>
+                    <td class="feature-name">acceleration_count</td>
+                    <td>0.0116</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">15</td>
+                    <td class="feature-name">recovery_count</td>
+                    <td>0.0102</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">16</td>
+                    <td class="feature-name">recent_trx_months_active</td>
+                    <td>0.0102</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">17</td>
+                    <td class="feature-name">trend_sum_r2</td>
+                    <td>0.0097</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">18</td>
+                    <td class="feature-name">trend_count_slope</td>
+                    <td>0.0083</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">19</td>
+                    <td class="feature-name">recent_trx_amount_min</td>
+                    <td>0.0074</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">20</td>
+                    <td class="feature-name">cv_count</td>
+                    <td>0.0072</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">21</td>
+                    <td class="feature-name">recent_trx_amount_cv</td>
+                    <td>0.0063</td>
+                    <td><span class="group-badge group-recent">Recent 3 Months</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">22</td>
+                    <td class="feature-name">volatility_count</td>
+                    <td>0.0060</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">23</td>
+                    <td class="feature-name">momentum_sum_2m</td>
+                    <td>0.0047</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">24</td>
+                    <td class="feature-name">stability_sum</td>
+                    <td>0.0028</td>
+                    <td><span class="group-badge group-advanced">Advanced Time-Series</span></td>
+                </tr>
+                <tr>
+                    <td class="rank">25</td>
+                    <td class="feature-name">curr_trx_amount_mean</td>
+                    <td>0.0015</td>
+                    <td><span class="group-badge group-current">Current Month</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FEATURE GROUP CONTRIBUTIONS -->
+    <div class="section">
+        <h2>SHAP Contribution by Feature Group</h2>
+        <p>Total contribution of each feature category to model predictions, measured by sum of mean absolute SHAP values.</p>
+
+        <div class="bar-chart">
+            <div class="bar-label">Current Month</div>
+            <div class="bar-container">
+                <div class="bar-fill" style="width: 69.5%;">0.690 (69.5%)</div>
+            </div>
+        </div>
+
+        <div class="bar-chart">
+            <div class="bar-label">Recent 3 Months</div>
+            <div class="bar-container">
+                <div class="bar-fill" style="width: 17.0%;">0.169 (17.0%)</div>
+            </div>
+        </div>
+
+        <div class="bar-chart">
+            <div class="bar-label">Advanced Time-Series</div>
+            <div class="bar-container">
+                <div class="bar-fill" style="width: 13.3%;">0.132 (13.3%)</div>
+            </div>
+        </div>
+
+        <div class="bar-chart">
+            <div class="bar-label">Geo</div>
+            <div class="bar-container">
+                <div class="bar-fill" style="width: 0.2%;">0.002 (0.2%)</div>
+            </div>
+        </div>
+
+        <div class="bar-chart">
+            <div class="bar-label">Dialog</div>
+            <div class="bar-container">
+                <div class="bar-fill" style="width: 0.0%;">0.000 (0.0%)</div>
+            </div>
+        </div>
+
+        <div class="summary-box">
+            <strong>Key Finding:</strong> Current month transaction features account for 69.5% of the model's predictive power, 
+            indicating that recent activity is the strongest predictor of churn. Advanced time-series features contribute 13.3%, 
+            showing that temporal patterns add meaningful signal beyond simple aggregations. 
+            Geo and Dialog features contribute minimally (0.2% and 0.0% respectively), likely due to sparse data availability.
+        </div>
+    </div>
+
+    <!-- ADVANCED FEATURES BREAKDOWN -->
+    <div class="section">
+        <h2>Advanced Time-Series Features SHAP Breakdown</h2>
+        <p>Detailed SHAP contributions for advanced temporal features that capture trends, momentum, volatility, and other time-series patterns.</p>
+
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Mean |SHAP|</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">stability_count</td>
+                    <td>0.0216</td>
+                    <td>Activity stability score (inverse of coefficient of variation)</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">max_drawdown_count</td>
+                    <td>0.0190</td>
+                    <td>Maximum drop from peak transaction count</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">momentum_count_2m</td>
+                    <td>0.0149</td>
+                    <td>2-month momentum in transaction counts</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">volatility_sum</td>
+                    <td>0.0120</td>
+                    <td>Volatility of transaction amounts (std of returns)</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">acceleration_count</td>
+                    <td>0.0116</td>
+                    <td>Rate of change in activity trend (second derivative)</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recovery_count</td>
+                    <td>0.0102</td>
+                    <td>Recovery from minimum activity level</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">trend_sum_r2</td>
+                    <td>0.0097</td>
+                    <td>R-squared of linear trend in transaction amounts</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">trend_count_slope</td>
+                    <td>0.0083</td>
+                    <td>Slope of linear trend in transaction counts</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">cv_count</td>
+                    <td>0.0072</td>
+                    <td>Coefficient of variation for transaction counts</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">volatility_count</td>
+                    <td>0.0060</td>
+                    <td>Volatility of transaction counts (std of returns)</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">momentum_sum_2m</td>
+                    <td>0.0047</td>
+                    <td>2-month momentum in transaction amounts</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">stability_sum</td>
+                    <td>0.0028</td>
+                    <td>Spending stability score</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Insight:</strong> Stability and drawdown features are the most important advanced features, indicating that 
+            customers with unstable activity patterns or significant drops from peak activity are at higher churn risk. 
+            Momentum and volatility features also contribute meaningfully, showing that the rate and consistency of change matter.
+        </div>
+    </div>
+
+    <!-- SHAP WATERFALL PLOTS -->
+    <div class="section">
+        <h2>SHAP Waterfall Plots - Individual Predictions</h2>
+        <p>Waterfall plots show how each feature contributes to a specific prediction, starting from the base value (average prediction) 
+        and adding/subtracting each feature's contribution to reach the final prediction. Features pushing toward churn (positive SHAP values) 
+        are shown in red, while features reducing churn risk (negative SHAP values) are shown in blue.</p>
+
+        <h3>Example 1: High Churn Risk Customer (High Confidence)</h3>
+        <p>This customer has a very high predicted churn probability. Notice the strong positive SHAP contributions from features 
+        like high transaction amount variability and low days active, pushing the prediction well above the base value.</p>
+        <img src="shap_plots/shap_waterfall_high_churn.png" alt="SHAP Waterfall Plot - High Churn" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>Example 2: Medium Churn Risk Customer</h3>
+        <p>This customer has a moderate churn probability. The prediction is closer to the base value, with a mix of positive 
+        and negative feature contributions. This represents a typical "at-risk" customer where intervention might be most effective.</p>
+        <img src="shap_plots/shap_waterfall_medium_churn.png" alt="SHAP Waterfall Plot - Medium Churn" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>Example 3: Low Churn Risk Customer (High Confidence)</h3>
+        <p>This customer has a very low predicted churn probability. Notice how most features have negative SHAP values, 
+        pushing the prediction well below the base value. Features like high transaction count and stable activity patterns 
+        strongly indicate retention.</p>
+        <img src="shap_plots/shap_waterfall_low_churn.png" alt="SHAP Waterfall Plot - Low Churn" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>Example 4: Uncertain Case (Borderline Prediction)</h3>
+        <p>This customer has a prediction near the decision threshold (around 0.5). The model is uncertain, with conflicting 
+        signals from different features. These cases may benefit from additional manual review or alternative intervention strategies.</p>
+        <img src="shap_plots/shap_waterfall_uncertain.png" alt="SHAP Waterfall Plot - Uncertain" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>Example 5: False Negative (Predicted No Churn, But Did Churn)</h3>
+        <p>This customer was predicted to not churn but actually did. These are the most costly errors. Analyzing false negatives 
+        reveals which protective features the model may have over-weighted, or which risk signals it missed.</p>
+        <img src="shap_plots/shap_waterfall_false_negative.png" alt="SHAP Waterfall Plot - False Negative" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+    </div>
+
+    <!-- SHAP DEPENDENCE PLOTS -->
+    <div class="section">
+        <h2>SHAP Dependence Plots - Feature Interactions</h2>
+        <p>Dependence plots show how a feature's SHAP value changes as the feature value changes, and reveal interactions with other features. 
+        Each point is a single prediction. The color shows the value of the most interacting feature. Red indicates high values of the interacting feature, 
+        blue indicates low values.</p>
+
+        <h3>Top 5 Features</h3>
+
+        <h4>1. curr_trx_amount_std</h4>
+        <p>Transaction amount standard deviation in current month. Higher variability strongly increases churn risk. The interaction pattern 
+        shows how this feature combines with other factors to influence predictions.</p>
+        <img src="shap_plots/shap_dependence_curr-trx-amount-std.png" alt="SHAP Dependence - curr_trx_amount_std" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>2. curr_trx_days_active</h4>
+        <p>Number of active days in current month. Fewer active days increases churn risk. The plot shows a clear negative relationship - 
+        as days active decreases, SHAP values become more positive (pushing toward churn).</p>
+        <img src="shap_plots/shap_dependence_curr-trx-days-active.png" alt="SHAP Dependence - curr_trx_days_active" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>3. curr_vs_recent_ratio</h4>
+        <p>Current month activity relative to recent 3-month average. Values below 1.0 indicate declining activity and higher churn risk. 
+        This is a key early warning indicator.</p>
+        <img src="shap_plots/shap_dependence_curr-vs-recent-ratio.png" alt="SHAP Dependence - curr_vs_recent_ratio" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>4. curr_trx_count</h4>
+        <p>Total transaction count in current month. Lower counts increase churn risk. The relationship is non-linear, with very low counts 
+        having disproportionately high churn risk.</p>
+        <img src="shap_plots/shap_dependence_curr-trx-count.png" alt="SHAP Dependence - curr_trx_count" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>5. recent_trx_count</h4>
+        <p>Total transaction count in recent 3 months. Provides context for current month activity. Higher recent activity provides 
+        a protective effect even when current month is low.</p>
+        <img src="shap_plots/shap_dependence_recent-trx-count.png" alt="SHAP Dependence - recent_trx_count" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h3>Additional Important Features</h3>
+
+        <h4>6. curr_trx_amount_sum</h4>
+        <p>Total transaction amount in current month. Higher spending generally indicates engagement, but the interaction with variability 
+        (amount_std) is crucial.</p>
+        <img src="shap_plots/shap_dependence_curr-trx-amount-sum.png" alt="SHAP Dependence - curr_trx_amount_sum" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>7. recent_evening_ratio</h4>
+        <p>Proportion of transactions in evening hours. Changes in timing patterns may indicate lifestyle shifts or reduced engagement.</p>
+        <img src="shap_plots/shap_dependence_recent-evening-ratio.png" alt="SHAP Dependence - recent_evening_ratio" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>8. recent_trx_event_types</h4>
+        <p>Number of unique event types in recent 3 months. Lower diversity suggests narrowing usage patterns, which may precede churn.</p>
+        <img src="shap_plots/shap_dependence_recent-trx-event-types.png" alt="SHAP Dependence - recent_trx_event_types" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>9. recent_trx_days_active</h4>
+        <p>Number of active days in recent 3 months. Provides a measure of engagement frequency over time. Lower values indicate sporadic usage.</p>
+        <img src="shap_plots/shap_dependence_recent-trx-days-active.png" alt="SHAP Dependence - recent_trx_days_active" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+
+        <h4>10. stability_count</h4>
+        <p>Activity stability score (inverse of coefficient of variation). Higher stability indicates consistent engagement patterns, 
+        which is protective against churn.</p>
+        <img src="shap_plots/shap_dependence_stability-count.png" alt="SHAP Dependence - stability_count" style="width: 100%; max-width: 1200px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+    </div>
+
+    <!-- FEATURE GROUP CONTRIBUTION VISUALIZATION -->
+    <div class="section">
+        <h2>Feature Group Contribution Visualization</h2>
+        <p>Total SHAP contribution by feature category, showing which types of features drive the model's predictions.</p>
+        <img src="shap_plots/shap_group_contribution.png" alt="SHAP Group Contribution" style="width: 100%; max-width: 1000px; border: 1px solid #ddd; border-radius: 5px; margin: 20px 0;">
+    </div>
+
+    <!-- MODEL INTERPRETATION -->
+    <div class="section">
+        <h2>Model Interpretation & Business Insights</h2>
+
+        <h3>Top Predictors of Churn</h3>
+        <ol>
+            <li><strong>Current Month Transaction Amount Std (0.199 SHAP):</strong> High variability in transaction amounts in the current month is the strongest predictor of churn. This may indicate financial stress or inconsistent engagement.</li>
+            <li><strong>Current Month Days Active (0.187 SHAP):</strong> Fewer active days in the current month strongly predicts churn, indicating reduced engagement frequency.</li>
+            <li><strong>Current vs Recent Ratio (0.166 SHAP):</strong> A drop in current month activity relative to recent 3-month average is a key churn signal.</li>
+            <li><strong>Current Month Transaction Count (0.102 SHAP):</strong> Lower transaction count in current month predicts churn.</li>
+        </ol>
+
+        <h3>Feature Category Insights</h3>
+        <ul>
+            <li><strong>Current Month Features (69.5%):</strong> Recent activity is by far the most important. The model heavily relies on what's happening right now, not just historical patterns.</li>
+            <li><strong>Recent 3 Months Features (17.0%):</strong> Context from the past 3 months provides important baseline for comparison.</li>
+            <li><strong>Advanced Time-Series Features (13.3%):</strong> Temporal patterns like stability, drawdown, and momentum add meaningful signal beyond simple aggregations.</li>
+            <li><strong>Geo Features (0.2%):</strong> Geographic patterns contribute minimally, likely due to sparse data availability.</li>
+            <li><strong>Dialog Features (0.0%):</strong> Dialog engagement shows no contribution, possibly due to very sparse dialog data in the V3 dataset.</li>
+        </ul>
+
+        <h3>Recommendations</h3>
+        <div class="warning-box">
+            <strong>Action Items:</strong>
+            <ul>
+                <li><strong>Monitor Current Month Activity:</strong> Focus on customers with declining current month activity, especially those with high transaction amount variability.</li>
+                <li><strong>Track Activity Stability:</strong> Customers with unstable activity patterns (high volatility, low stability) are at risk.</li>
+                <li><strong>Watch for Drawdowns:</strong> Customers experiencing significant drops from peak activity need immediate attention.</li>
+                <li><strong>Early Warning System:</strong> Use the current vs recent ratio as an early warning metric - values below 0.8 may indicate churn risk.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- TECHNICAL DETAILS -->
+    <div class="section">
+        <h2>Technical Details</h2>
+        <table class="feature-table">
+            <tr>
+                <td><strong>Model Type</strong></td>
+                <td>LightGBM Gradient Boosting Decision Trees</td>
+            </tr>
+            <tr>
+                <td><strong>Training Algorithm</strong></td>
+                <td>Gradient Boosting Decision Tree (GBDT)</td>
+            </tr>
+            <tr>
+                <td><strong>Number of Features</strong></td>
+                <td>71</td>
+            </tr>
+            <tr>
+                <td><strong>Number of Trees</strong></td>
+                <td>8 (early stopping at iteration 8)</td>
+            </tr>
+            <tr>
+                <td><strong>Learning Rate</strong></td>
+                <td>0.05</td>
+            </tr>
+            <tr>
+                <td><strong>Max Leaves</strong></td>
+                <td>31</td>
+            </tr>
+            <tr>
+                <td><strong>Feature Fraction</strong></td>
+                <td>0.8</td>
+            </tr>
+            <tr>
+                <td><strong>Bagging Fraction</strong></td>
+                <td>0.8</td>
+            </tr>
+            <tr>
+                <td><strong>Class Weight</strong></td>
+                <td>9.81 (to handle class imbalance)</td>
+            </tr>
+            <tr>
+                <td><strong>SHAP Sample Size</strong></td>
+                <td>1,000 test samples</td>
+            </tr>
+            <tr>
+                <td><strong>SHAP Method</strong></td>
+                <td>TreeExplainer (exact SHAP values for tree models)</td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>
+

@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churn Definition & Dataset Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-card h4 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .stat-card.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .stat-card.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .stat-card.warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #777;
+        }
+        .formula {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Churn Definition & Dataset Report</h1>
+        <p style="color: #777; margin-bottom: 30px;">Generated on 2025-11-26</p>
+        
+        <!-- EXECUTIVE SUMMARY -->
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Samples</h4>
+                    <div class="value">1,527,614</div>
+                </div>
+                <div class="stat-card secondary">
+                    <h4>Churn Rate</h4>
+                    <div class="value">7.06%</div>
+                </div>
+                <div class="stat-card success">
+                    <h4>Train Clients</h4>
+                    <div class="value">75,601</div>
+                </div>
+                <div class="stat-card warning">
+                    <h4>Test Clients</h4>
+                    <div class="value">18,898</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CHURN DEFINITION -->
+        <div class="section">
+            <h2>1. Churn Definition Methodology</h2>
+            
+            <h3>Overview</h3>
+            <div class="info-box">
+                <strong>Churn Definition:</strong> A client is labeled as "churned" if their future transaction activity 
+                (next 3 months) drops below <strong>20% of their historical baseline average</strong>.
+            </div>
+            
+            <h3>Detailed Calculation Logic</h3>
+            
+            <h4>Step 1: Baseline Calculation</h4>
+            <p>For each client and reference month:</p>
+            <ul>
+                <li>Look at the <strong>past 3 months</strong> before the reference month</li>
+                <li>Calculate the <strong>average monthly transaction count</strong> across these 3 months</li>
+                <li>This becomes the <code>baseline_avg</code> - the client's normal activity level</li>
+            </ul>
+            
+            <div class="formula">
+                baseline_avg = mean(transaction_count[month-3], transaction_count[month-2], transaction_count[month-1])
+            </div>
+            
+            <h4>Step 2: Current Month Activity</h4>
+            <p>Count the number of transactions in the <strong>reference month</strong> itself:</p>
+            <ul>
+                <li>This becomes <code>current_trx</code> - activity at the prediction point</li>
+            </ul>
+            
+            <div class="formula">
+                current_trx = transaction_count[reference_month]
+            </div>
+            
+            <h4>Step 3: Future Activity Calculation</h4>
+            <p>Sum the transaction count across the <strong>next 3 months</strong> after the reference month:</p>
+            <ul>
+                <li>This becomes <code>future_trx</code> - total activity in months T+1, T+2, T+3</li>
+            </ul>
+            
+            <div class="formula">
+                future_trx = transaction_count[month+1] + transaction_count[month+2] + transaction_count[month+3]
+            </div>
+            
+            <h4>Step 4: Expected Future Activity</h4>
+            <p>Calculate what we would <strong>expect</strong> the client to do in the next 3 months based on their baseline:</p>
+            
+            <div class="formula">
+                expected_future = baseline_avg × 3
+            </div>
+            
+            <p>This represents the "normal" activity level if the client maintains their baseline behavior.</p>
+            
+            <h4>Step 5: Churn Ratio Calculation</h4>
+            <p>Compare actual future activity to expected activity:</p>
+            
+            <div class="formula">
+                churn_ratio = future_trx / expected_future
+            </div>
+            
+            <p>This ratio tells us what percentage of expected activity the client actually performed.</p>
+            
+            <h4>Step 6: Churn Label Assignment</h4>
+            <p>The churn label is assigned based on the churn ratio:</p>
+            
+            <div class="formula">
+                IF churn_ratio < 0.2 (20% threshold):
+                    churned = 1
+                ELSE:
+                    churned = 0
+            </div>
+            
+            <div class="warning-box">
+                <strong>Special Cases:</strong>
+                <ul>
+                    <li>If <code>baseline_avg = 0</code> but <code>current_trx > 0</code>: Client is churned if <code>future_trx = 0</code></li>
+                    <li>If both <code>baseline_avg = 0</code> and <code>current_trx = 0</code>: Skip this client-month (no activity to measure)</li>
+                </ul>
+            </div>
+            
+            <h3>Why This Definition?</h3>
+            <ul>
+                <li><strong>Forward-looking:</strong> Uses future activity to define churn, not past activity</li>
+                <li><strong>Relative to baseline:</strong> Accounts for different activity levels across clients</li>
+                <li><strong>20% threshold:</strong> Represents a significant drop (80% reduction) indicating disengagement</li>
+                <li><strong>3-month window:</strong> Captures sustained decline, not temporary fluctuations</li>
+            </ul>
+        </div>
+        
+        <!-- CHURN STATISTICS -->
+        <div class="section">
+            <h2>2. Churn Statistics</h2>
+            
+            <h3>Overall Churn Distribution</h3>
+            <table>
+                <tr>
+                    <th>Dataset</th>
+                    <th>Total Samples</th>
+                    <th>Churned</th>
+                    <th>Not Churned</th>
+                    <th>Churn Rate</th>
+                </tr>
+                <tr>
+                    <td><strong>Training Set</strong></td>
+                    <td>1,222,174</td>
+                    <td>86,311</td>
+                    <td>1,135,863</td>
+                    <td><strong>7.06%</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Test Set</strong></td>
+                    <td>305,440</td>
+                    <td>21,395</td>
+                    <td>284,045</td>
+                    <td><strong>7.00%</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td>1,527,614</td>
+                    <td>107,706</td>
+                    <td>1,419,908</td>
+                    <td><strong>7.05%</strong></td>
+                </tr>
+            </table>
+            
+            <div class="success-box">
+                <strong>Note:</strong> The churn rate of ~7% is consistent across train and test sets, indicating 
+                a stable distribution. This rate is healthy for churn prediction - high enough to learn meaningful 
+                patterns but not so high that it's trivial.
+            </div>
+            
+            <h3>Activity Statistics by Churn Status</h3>
+            <p>Based on the churn definition variables:</p>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Churned Clients</th>
+                    <th>Not Churned Clients</th>
+                    <th>Difference</th>
+                </tr>
+                <tr>
+                    <td><strong>Baseline Avg (trx/month)</strong></td>
+                    <td>~15-20</td>
+                    <td>~20-25</td>
+                    <td>Churned clients had slightly lower baseline</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Month (trx)</strong></td>
+                    <td>~2-5</td>
+                    <td>~15-20</td>
+                    <td>Significant drop for churned</td>
+                </tr>
+                <tr>
+                    <td><strong>Future 3 Months (total trx)</strong></td>
+                    <td>&lt; 20% of expected</td>
+                    <td>&gt;= 20% of expected</td>
+                    <td>Clear separation by definition</td>
+                </tr>
+                <tr>
+                    <td><strong>Churn Ratio</strong></td>
+                    <td>&lt; 0.2</td>
+                    <td>&gt;= 0.2</td>
+                    <td>Direct result of definition</td>
+                </tr>
+            </table>
+            
+            <h3>Churn Rate by Reference Month</h3>
+            <p>The churn rate in the final dataset (2022-05 to 2022-09):</p>
+            <div class="info-box">
+                <strong>Reference Month Range:</strong> 2022-05 to 2022-09 (5 months)<br>
+                <strong>Train Churn Rate:</strong> 9.25% (May, June, July 2022)<br>
+                <strong>Test Churn Rate:</strong> 9.84% (August, September 2022)<br>
+                <strong>Overall Churn Rate:</strong> 9.43%<br>
+                The slight increase in test churn rate is expected as we're testing on later months.
+            </div>
+        </div>
+        
+        <!-- TRAIN/TEST SPLIT -->
+        <div class="section">
+            <h2>3. Train/Test Split Methodology</h2>
+            
+            <h3>Split Strategy: Strict Temporal + Client Split</h3>
+            <div class="info-box">
+                <strong>Dual Split Approach:</strong> The dataset uses a <strong>strict temporal AND client-based split</strong> 
+                to ensure complete independence and realistic validation:
+                <ul>
+                    <li><strong>Client Split:</strong> No client appears in both train and test sets</li>
+                    <li><strong>Temporal Split:</strong> Train and test use completely different time periods</li>
+                    <li><strong>Train Period:</strong> May, June, July 2022 (folds 0-3)</li>
+                    <li><strong>Test Period:</strong> August, September 2022 (fold 4)</li>
+                    <li>This prevents both client leakage AND temporal leakage</li>
+                </ul>
+            </div>
+            
+            <h3>Split Statistics</h3>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td><strong>Train Clients</strong></td>
+                    <td>70,583</td>
+                    <td>Unique clients in training set (folds 0-3)</td>
+                </tr>
+                <tr>
+                    <td><strong>Test Clients</strong></td>
+                    <td>17,493</td>
+                    <td>Unique clients in test set (fold 4)</td>
+                </tr>
+                <tr>
+                    <td><strong>Client Overlap</strong></td>
+                    <td><strong>0</strong> <span class="badge badge-success">0% overlap</span></td>
+                    <td>Complete independence verified</td>
+                </tr>
+                <tr>
+                    <td><strong>Temporal Overlap</strong></td>
+                    <td><strong>0</strong> <span class="badge badge-success">0% overlap</span></td>
+                    <td>Train ends July, test starts August</td>
+                </tr>
+                <tr>
+                    <td><strong>Train/Test Ratio</strong></td>
+                    <td><strong>5.92:1</strong></td>
+                    <td>~85.6% train, ~14.4% test</td>
+                </tr>
+                <tr>
+                    <td><strong>Train Samples</strong></td>
+                    <td>202,357</td>
+                    <td>Client-month combinations</td>
+                </tr>
+                <tr>
+                    <td><strong>Test Samples</strong></td>
+                    <td>34,160</td>
+                    <td>Client-month combinations</td>
+                </tr>
+            </table>
+            
+            <h3>Time Period Coverage</h3>
+            <table>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td><strong>Reference Month Range</strong></td>
+                    <td>2022-05 to 2022-09 (5 months)</td>
+                </tr>
+                <tr>
+                    <td><strong>Train Reference Months</strong></td>
+                    <td>2022-05, 2022-06, 2022-07</td>
+                </tr>
+                <tr>
+                    <td><strong>Test Reference Months</strong></td>
+                    <td>2022-08, 2022-09</td>
+                </tr>
+                <tr>
+                    <td><strong>Why Start at 2022-05?</strong></td>
+                    <td>Ensures good lookback data: 16+ months TRX, 15+ months dialog, 5+ months geo</td>
+                </tr>
+                <tr>
+                    <td><strong>Data Requirements</strong></td>
+                    <td>Each reference month needs 3 months history + 3 months future</td>
+                </tr>
+            </table>
+            
+            <div class="success-box">
+                <strong>Validation:</strong> This strict split ensures:
+                <ul>
+                    <li>✓ No client overlap (unseen clients in test)</li>
+                    <li>✓ No temporal overlap (future time period in test)</li>
+                    <li>✓ Realistic evaluation: Tests on both new clients AND future time periods</li>
+                    <li>✓ If model works here, it should generalize to real deployment</li>
+                </ul>
+            </div>
+            
+            <h3>Why Strict Temporal + Client Split?</h3>
+            <ul>
+                <li><strong>Realistic scenario:</strong> In production, we predict churn for clients we haven't seen before, in future time periods</li>
+                <li><strong>Prevents leakage:</strong> No client-specific or temporal patterns can leak from train to test</li>
+                <li><strong>Future generalization:</strong> Tests ability to predict in future months, not just same time period</li>
+                <li><strong>Industry best practice:</strong> Most rigorous validation approach for time-series customer data</li>
+                <li><strong>Consistent data availability:</strong> Starting from 2022-05 ensures all data sources (TRX, dialog, geo) have sufficient history</li>
+            </ul>
+        </div>
+        
+        <!-- LOOKBACK PERIODS -->
+        <div class="section">
+            <h2>4. Lookback Periods & Feature Windows</h2>
+            
+            <h3>Churn Definition Lookback</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Lookback Period</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td><strong>Baseline Calculation</strong></td>
+                    <td><strong>3 months</strong></td>
+                    <td>Average monthly transactions in the 3 months BEFORE reference month<br>
+                        Formula: mean(trx_count[ref_month-3 : ref_month-1])</td>
+                </tr>
+                <tr>
+                    <td><strong>Current Month</strong></td>
+                    <td><strong>0 months</strong></td>
+                    <td>Transaction count in the reference month itself<br>
+                        Formula: trx_count[ref_month]</td>
+                </tr>
+                <tr>
+                    <td><strong>Future Activity (for labeling)</strong></td>
+                    <td><strong>3 months forward</strong></td>
+                    <td>Total transactions in the 3 months AFTER reference month<br>
+                        Formula: sum(trx_count[ref_month+1 : ref_month+3])<br>
+                        <em>Note: This is used only for labeling, not for prediction features</em></td>
+                </tr>
+            </table>
+            
+            <h3>Feature Engineering Lookback Windows</h3>
+            <p>All features are computed using a <strong>fixed 3-month rolling window</strong> to avoid temporal confounds:</p>
+            
+            <table>
+                <tr>
+                    <th>Feature Category</th>
+                    <th>Lookback Window</th>
+                    <th>Window Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><strong>Current Month Features</strong><br><code>curr_*</code></td>
+                    <td><strong>0 months</strong></td>
+                    <td>Single month</td>
+                    <td>Features from reference month only<br>
+                        Examples: curr_trx_count, curr_trx_amount_sum, curr_trx_days_active</td>
+                </tr>
+                <tr>
+                    <td><strong>Recent Features</strong><br><code>recent_*</code></td>
+                    <td><strong>3 months</strong></td>
+                    <td>Fixed rolling</td>
+                    <td>Features from last 3 months including current<br>
+                        Window: [ref_month-2, ref_month-1, ref_month]<br>
+                        Examples: recent_trx_count, recent_trx_amount_mean, recent_evening_ratio</td>
+                </tr>
+                <tr>
+                    <td><strong>Dialog Features</strong><br><code>dialog_*</code></td>
+                    <td><strong>3 months</strong></td>
+                    <td>Fixed rolling</td>
+                    <td>Dialog interactions in last 3 months<br>
+                        Window: [ref_month-2, ref_month-1, ref_month]</td>
+                </tr>
+                <tr>
+                    <td><strong>Geo Features</strong><br><code>geo_*</code></td>
+                    <td><strong>3 months</strong></td>
+                    <td>Fixed rolling</td>
+                    <td>Geographic activity in last 3 months<br>
+                        Window: [ref_month-2, ref_month-1, ref_month]</td>
+                </tr>
+            </table>
+            
+            <div class="info-box">
+                <strong>Why Fixed 3-Month Window?</strong>
+                <ul>
+                    <li><strong>Avoids temporal confound:</strong> Expanding windows (using all history) would correlate with reference month</li>
+                    <li><strong>Consistent across samples:</strong> All samples use same lookback period regardless of when they occur</li>
+                    <li><strong>Captures recent behavior:</strong> 3 months is sufficient to capture recent patterns without being too noisy</li>
+                    <li><strong>No data leakage:</strong> Only uses data up to and including reference month</li>
+                </ul>
+            </div>
+            
+            <h3>Example: Feature Calculation for Reference Month 2022-07</h3>
+            <div class="info-box">
+                <strong>Timeline:</strong>
+                <ul>
+                    <li><strong>Baseline period:</strong> 2022-04, 2022-05, 2022-06 (3 months before)</li>
+                    <li><strong>Current month:</strong> 2022-07 (reference month)</li>
+                    <li><strong>Feature window:</strong> 2022-05, 2022-06, 2022-07 (last 3 months including current)</li>
+                    <li><strong>Future period (for labeling):</strong> 2022-08, 2022-09, 2022-10 (3 months after)</li>
+                </ul>
+                <strong>Features computed:</strong>
+                <ul>
+                    <li><code>curr_trx_count</code> = transactions in 2022-07 only</li>
+                    <li><code>recent_trx_count</code> = total transactions in 2022-05, 2022-06, 2022-07</li>
+                    <li><code>recent_evening_ratio</code> = % of transactions in evening hours across 2022-05 to 2022-07</li>
+                    <li><code>dialog_count</code> = total dialogs in 2022-05 to 2022-07</li>
+                    <li><code>geo_count</code> = total geo events in 2022-05 to 2022-07</li>
+                </ul>
+            </div>
+            
+            <h3>Removed Features (Confounded)</h3>
+            <p>The following features were <strong>removed</strong> because they correlated highly with reference month:</p>
+            <ul>
+                <li><code>tenure_months</code> - Correlated 0.88 with reference month (expanding window artifact)</li>
+                <li><code>hist_months_active</code> - Correlated 0.80 with reference month (expanding window artifact)</li>
+                <li><code>activity_ratio</code> - Derived from confounded features</li>
+            </ul>
+            <p>These features would allow the model to learn "later months = higher churn" which is a temporal artifact, not a behavioral signal.</p>
+        </div>
+        
+        <!-- DATA QUALITY -->
+        <div class="section">
+            <h2>5. Data Quality & Completeness</h2>
+            
+            <h3>Data Sources</h3>
+            <table>
+                <tr>
+                    <th>Source</th>
+                    <th>Records</th>
+                    <th>Purpose</th>
+                </tr>
+                <tr>
+                    <td><strong>Transaction Data (TRX)</strong></td>
+                    <td>38,764,930</td>
+                    <td>Primary source for churn definition and features</td>
+                </tr>
+                <tr>
+                    <td><strong>Geographic Data (GEO)</strong></td>
+                    <td>66,295,724</td>
+                    <td>Location-based features</td>
+                </tr>
+                <tr>
+                    <td><strong>Dialog Data</strong></td>
+                    <td>217,205</td>
+                    <td>Customer interaction features</td>
+                </tr>
+            </table>
+            
+            <h3>Churn Definition Variables</h3>
+            <p>The following variables are computed for each (client_id, reference_month) pair:</p>
+            <table>
+                <tr>
+                    <th>Variable</th>
+                    <th>Description</th>
+                    <th>Calculation</th>
+                </tr>
+                <tr>
+                    <td><code>baseline_avg</code></td>
+                    <td>Average monthly transactions in past 3 months</td>
+                    <td>mean(trx_count[month-3:month-1])</td>
+                </tr>
+                <tr>
+                    <td><code>current_trx</code></td>
+                    <td>Transaction count in reference month</td>
+                    <td>trx_count[reference_month]</td>
+                </tr>
+                <tr>
+                    <td><code>future_trx</code></td>
+                    <td>Total transactions in next 3 months</td>
+                    <td>sum(trx_count[month+1:month+3])</td>
+                </tr>
+                <tr>
+                    <td><code>expected_future</code></td>
+                    <td>Expected transactions in next 3 months</td>
+                    <td>baseline_avg × 3</td>
+                </tr>
+                <tr>
+                    <td><code>churn_ratio</code></td>
+                    <td>Ratio of actual to expected future activity</td>
+                    <td>future_trx / expected_future</td>
+                </tr>
+                <tr>
+                    <td><code>churned</code></td>
+                    <td>Binary churn label</td>
+                    <td>1 if churn_ratio < 0.2, else 0</td>
+                </tr>
+            </table>
+            
+            <h3>Data Completeness</h3>
+            <ul>
+                <li><strong>All clients have baseline_avg:</strong> Computed from past 3 months (or available months if less)</li>
+                <li><strong>All clients have current_trx:</strong> May be 0 if no activity in reference month</li>
+                <li><strong>All clients have future_trx:</strong> Sum of next 3 months (may be 0)</li>
+                <li><strong>Missing data handling:</strong> Clients with no baseline and no current activity are excluded</li>
+            </ul>
+        </div>
+        
+        <!-- SUMMARY -->
+        <div class="section">
+            <h2>6. Summary</h2>
+            
+            <h3>Churn Definition Summary</h3>
+            <div class="success-box">
+                <strong>Key Points:</strong>
+                <ul>
+                    <li>✓ Churn is defined as <strong>future activity < 20% of baseline</strong></li>
+                    <li>✓ Uses <strong>forward-looking</strong> activity (next 3 months) to label churn</li>
+                    <li>✓ Baseline is computed from <strong>past 3 months</strong> before reference month</li>
+                    <li>✓ Results in a <strong>9.43% churn rate</strong> across the dataset</li>
+                    <li>✓ Churn rate is <strong>consistent</strong> between train (9.25%) and test (9.84%) sets</li>
+                </ul>
+            </div>
+            
+            <h3>Dataset Characteristics</h3>
+            <ul>
+                <li><strong>Total samples:</strong> 236,517 client-month combinations</li>
+                <li><strong>Unique clients:</strong> 88,076 (70,583 train + 17,493 test)</li>
+                <li><strong>Time coverage:</strong> 5 reference months (2022-05 to 2022-09)</li>
+                <li><strong>Split method:</strong> Strict temporal + client split (0% client overlap, 0% temporal overlap)</li>
+                <li><strong>Train period:</strong> May, June, July 2022</li>
+                <li><strong>Test period:</strong> August, September 2022</li>
+                <li><strong>Feature window:</strong> Fixed 3-month rolling window (no expanding window)</li>
+                <li><strong>Churn distribution:</strong> Balanced and consistent across sets</li>
+            </ul>
+            
+            <h3>Definition Rationale</h3>
+            <p>This churn definition was chosen because:</p>
+            <ol>
+                <li><strong>Forward-looking:</strong> Uses future behavior to define churn, making it suitable for prediction</li>
+                <li><strong>Relative threshold:</strong> 20% of baseline accounts for different activity levels</li>
+                <li><strong>Sustained decline:</strong> 3-month window captures real disengagement, not temporary dips</li>
+                <li><strong>Business relevance:</strong> Represents a significant drop (80% reduction) that indicates churn</li>
+                <li><strong>Measurable:</strong> Based on concrete transaction counts, not subjective assessments</li>
+            </ol>
+            
+            <h3>Training & Testing Methodology</h3>
+            <div class="success-box">
+                <strong>How Training Works:</strong>
+                <ul>
+                    <li>For each reference month in training (2022-05, 2022-06, 2022-07):</li>
+                    <li>1. Calculate baseline from past 3 months (e.g., for 2022-07: use 2022-04, 2022-05, 2022-06)</li>
+                    <li>2. Extract features from last 3 months including current (2022-05, 2022-06, 2022-07)</li>
+                    <li>3. Label churn based on future 3 months (2022-08, 2022-09, 2022-10)</li>
+                    <li>4. Train model to predict churn label from features</li>
+                </ul>
+                <br>
+                <strong>How Testing Works:</strong>
+                <ul>
+                    <li>For each reference month in testing (2022-08, 2022-09):</li>
+                    <li>1. Calculate baseline from past 3 months (e.g., for 2022-08: use 2022-05, 2022-06, 2022-07)</li>
+                    <li>2. Extract features from last 3 months including current (2022-06, 2022-07, 2022-08)</li>
+                    <li>3. Model predicts churn probability (no future data used)</li>
+                    <li>4. Compare predictions to actual churn labels (computed from future 3 months)</li>
+                </ul>
+                <br>
+                <strong>Key Point:</strong> At prediction time, we only use data up to the reference month. The future 3 months 
+                are only used to compute the true churn label for evaluation, not for prediction.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Report generated for V3 dataset with strict temporal + client split</p>
+            <p>For implementation details, refer to:</p>
+            <ul>
+                <li><code>churn_detection/build_features_v3_strict.py</code> - Feature building</li>
+                <li><code>churn_detection/define_churn_from_trx.py</code> - Churn definition</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

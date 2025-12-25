@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Documentation - Churn Prediction Model</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .feature-table th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .feature-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .feature-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .feature-name {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .feature-type {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .window-info {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav a {
+            display: inline-block;
+            margin: 5px 10px;
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .nav a:hover {
+            background-color: #2980b9;
+        }
+        .summary-box {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Feature Documentation - Churn Prediction Model V3</h1>
+    
+    <div class="summary-box">
+        <strong>Dataset Overview:</strong> This document describes all 71 features used in the V3 churn prediction model.
+        All features are computed using a <strong>fixed 3-month rolling window</strong> (reference_month-2 to reference_month)
+        to avoid temporal confounds and ensure consistent data availability.
+    </div>
+
+    <div class="nav">
+        <a href="#section1">Section 1: Transaction Features (20)</a>
+        <a href="#section2">Section 2: Dialog & Geo Basic (20)</a>
+        <a href="#section3">Section 3: Advanced TRX (22)</a>
+        <a href="#section4">Section 4: Advanced Geo (9)</a>
+    </div>
+
+    <!-- SECTION 1: Transaction Features -->
+    <div class="section" id="section1">
+        <h2>Section 1: Transaction Features (20 features)</h2>
+        
+        <div class="window-info">
+            <strong>Lookback Window:</strong> Fixed 3-month rolling window [ref_month-2, ref_month-1, ref_month]
+            <br><strong>Current Month:</strong> Features computed from transactions in the reference month only
+            <br><strong>Recent 3 Months:</strong> Features computed from transactions in the 3-month window
+        </div>
+
+        <h3>Current Month Transaction Features (7 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">curr_trx_count</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Total number of transactions in the reference month</td>
+                    <td>Immediate activity level. Low values may indicate declining engagement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">curr_trx_amount_sum</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Sum of all transaction amounts in the reference month</td>
+                    <td>Total spending in current month. Sharp drops signal financial disengagement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">curr_trx_amount_mean</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Average transaction amount in the reference month</td>
+                    <td>Average transaction size. Lower values may indicate reduced spending per transaction.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">curr_trx_amount_std</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Standard deviation of transaction amounts in the reference month</td>
+                    <td>Variability in spending. High std with low mean may indicate inconsistent behavior.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">curr_trx_days_active</td>
+                    <td class="feature-type">Integer (0-31)</td>
+                    <td>Number of unique days with transactions in the reference month</td>
+                    <td>Engagement frequency. Fewer active days suggests reduced interaction.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">curr_trx_event_types</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Number of unique event types in the reference month</td>
+                    <td>Service diversity. Lower diversity may indicate narrowing usage patterns.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Recent 3-Month Transaction Features (13 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">recent_trx_count</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Total number of transactions in the 3-month window</td>
+                    <td>Overall activity volume. Provides context for current month activity.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_amount_sum</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Sum of all transaction amounts in the 3-month window</td>
+                    <td>Total spending over 3 months. More stable than single-month metrics.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_amount_mean</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Average transaction amount across the 3-month window</td>
+                    <td>Typical transaction size. Helps normalize for volume differences.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_amount_std</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Standard deviation of transaction amounts in the 3-month window</td>
+                    <td>Spending consistency. High variability may indicate unstable engagement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_amount_max</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Maximum transaction amount in the 3-month window</td>
+                    <td>Peak spending. Large drops from peak may signal financial stress or disengagement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_amount_min</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Minimum transaction amount in the 3-month window</td>
+                    <td>Baseline spending floor. Very low minimums may indicate minimal engagement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_days_active</td>
+                    <td class="feature-type">Integer (0-93)</td>
+                    <td>Number of unique days with transactions in the 3-month window</td>
+                    <td>Engagement frequency over time. Lower values indicate sporadic usage.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_event_types</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Number of unique event types in the 3-month window</td>
+                    <td>Service diversity. Declining diversity suggests narrowing usage.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_months_active</td>
+                    <td class="feature-type">Integer (1-3)</td>
+                    <td>Number of months with at least one transaction in the 3-month window</td>
+                    <td>Consistency indicator. Clients active in only 1 month may be at risk.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_morning_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of transactions occurring between 6 AM - 12 PM</td>
+                    <td>Usage pattern. Changes in timing patterns may indicate lifestyle shifts.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_evening_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of transactions occurring between 6 PM - 12 AM</td>
+                    <td>Evening usage pattern. May correlate with work schedules or habits.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_weekend_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of transactions occurring on weekends (Saturday/Sunday)</td>
+                    <td>Weekend engagement. Changes may reflect lifestyle or work pattern shifts.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recent_trx_amount_cv</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Coefficient of variation: std / mean of transaction amounts</td>
+                    <td>Spending stability. High CV indicates inconsistent spending patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">curr_vs_recent_ratio</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Current month transactions / average monthly transactions in recent 3 months</td>
+                    <td>Activity trend. Values < 1 indicate declining activity; > 1 indicates increasing activity.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 2: Dialog & Geo Basic Features -->
+    <div class="section" id="section2">
+        <h2>Section 2: Dialog & Geographic Basic Features (20 features)</h2>
+        
+        <div class="window-info">
+            <strong>Lookback Window:</strong> Fixed 3-month rolling window [ref_month-2, ref_month-1, ref_month]
+            <br><strong>Note:</strong> Dialog and Geo features may be 0 for clients without data in these sources
+        </div>
+
+        <h3>Dialog Features (13 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">dialog_count</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Total number of dialog interactions in the 3-month window</td>
+                    <td>Engagement indicator. Clients with dialogs have 4.1x lower churn rate.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_months</td>
+                    <td class="feature-type">Integer (0-3)</td>
+                    <td>Number of months with at least one dialog in the 3-month window</td>
+                    <td>Consistency of engagement. Regular dialog users are more engaged.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_norm</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>L2 norm (magnitude) of the mean embedding vector across all dialogs</td>
+                    <td>Embedding magnitude. May correlate with conversation intensity or complexity.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_0</td>
+                    <td class="feature-type">Float</td>
+                    <td>First dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 0. Captures semantic content of conversations.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_1</td>
+                    <td class="feature-type">Float</td>
+                    <td>Second dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 1. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_2</td>
+                    <td class="feature-type">Float</td>
+                    <td>Third dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 2. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_3</td>
+                    <td class="feature-type">Float</td>
+                    <td>Fourth dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 3. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_4</td>
+                    <td class="feature-type">Float</td>
+                    <td>Fifth dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 4. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_5</td>
+                    <td class="feature-type">Float</td>
+                    <td>Sixth dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 5. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_6</td>
+                    <td class="feature-type">Float</td>
+                    <td>Seventh dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 6. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_7</td>
+                    <td class="feature-type">Float</td>
+                    <td>Eighth dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 7. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_8</td>
+                    <td class="feature-type">Float</td>
+                    <td>Ninth dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 8. Part of semantic representation.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">dialog_emb_9</td>
+                    <td class="feature-type">Float</td>
+                    <td>Tenth dimension of the mean dialog embedding vector</td>
+                    <td>Embedding dimension 9. Part of semantic representation. First 10 dimensions capture key semantic patterns.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Note on Dialog Embeddings:</strong> Dialog embeddings are high-dimensional vector representations (typically 384 or 768 dimensions) 
+        that capture the semantic meaning of conversations. We use the first 10 dimensions plus the L2 norm as features. 
+        These embeddings are derived from transformer models (e.g., BERT) and encode conversation topics, sentiment, and intent.</p>
+
+        <h3>Geographic Basic Features (7 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">geo_count</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Total number of geographic events (location pings) in the 3-month window</td>
+                    <td>Location activity volume. Higher values indicate more active location tracking.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_geohash_4_unique</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Number of unique geohash_4 locations (city-level precision) visited</td>
+                    <td>City-level mobility. Higher values indicate travel across multiple cities.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_geohash_5_unique</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Number of unique geohash_5 locations (neighborhood-level precision) visited</td>
+                    <td>Neighborhood-level mobility. Captures local movement patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_geohash_6_unique</td>
+                    <td class="feature-type">Integer (>=0)</td>
+                    <td>Number of unique geohash_6 locations (precise location) visited</td>
+                    <td>Precise location diversity. Very high values may indicate frequent movement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_geohash_4_concentration</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of events in the most frequent geohash_4 location</td>
+                    <td>City concentration. Values close to 1 indicate staying in one primary city.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_geohash_5_concentration</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of events in the most frequent geohash_5 location</td>
+                    <td>Neighborhood concentration. High values indicate local, stable patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_geohash_6_concentration</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of events in the most frequent geohash_6 location</td>
+                    <td>Location concentration. Very high values may indicate home/work base.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Note on Geohash:</strong> Geohash is a geocoding system that encodes geographic coordinates into strings. 
+        Higher precision (longer hash) represents smaller areas. geohash_4 ≈ city, geohash_5 ≈ neighborhood, geohash_6 ≈ precise location.</p>
+    </div>
+
+    <!-- SECTION 3: Advanced TRX Features -->
+    <div class="section" id="section3">
+        <h2>Section 3: Advanced Transaction Time-Series Features (22 features)</h2>
+        
+        <div class="window-info">
+            <strong>Lookback Window:</strong> Fixed 3-month rolling window [ref_month-2, ref_month-1, ref_month]
+            <br><strong>Methodology:</strong> These features analyze the temporal sequence of monthly transaction counts and amounts
+            <br><strong>Purpose:</strong> Capture trends, momentum, volatility, and statistical patterns that may predict churn
+        </div>
+
+        <h3>Trend Features (4 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">trend_count_slope</td>
+                    <td class="feature-type">Float</td>
+                    <td>Normalized slope from linear regression of transaction counts over 3 months (slope / mean)</td>
+                    <td>Activity trend. Positive = increasing, negative = decreasing. Normalized by mean to handle scale differences.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">trend_sum_slope</td>
+                    <td class="feature-type">Float</td>
+                    <td>Normalized slope from linear regression of transaction amounts over 3 months (slope / mean)</td>
+                    <td>Spending trend. Positive = increasing spending, negative = declining spending.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">trend_count_r2</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>R-squared (coefficient of determination) of linear regression for transaction counts</td>
+                    <td>Trend strength. Values close to 1 indicate strong linear trend; close to 0 indicates no clear trend.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">trend_sum_r2</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>R-squared of linear regression for transaction amounts</td>
+                    <td>Spending trend strength. High R2 with negative slope = consistent decline (churn risk).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Momentum Features (5 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">momentum_count_1m</td>
+                    <td class="feature-type">Float</td>
+                    <td>1-month momentum: (current_month - previous_month) / previous_month for transaction counts</td>
+                    <td>Short-term activity change. Negative values indicate recent decline.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">momentum_sum_1m</td>
+                    <td class="feature-type">Float</td>
+                    <td>1-month momentum: (current_month - previous_month) / previous_month for transaction amounts</td>
+                    <td>Short-term spending change. Large negative values signal immediate risk.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">momentum_count_2m</td>
+                    <td class="feature-type">Float</td>
+                    <td>2-month momentum: (current_month - 2_months_ago) / 2_months_ago for transaction counts</td>
+                    <td>Medium-term activity change. Captures longer-term trends than 1-month momentum.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">momentum_sum_2m</td>
+                    <td class="feature-type">Float</td>
+                    <td>2-month momentum: (current_month - 2_months_ago) / 2_months_ago for transaction amounts</td>
+                    <td>Medium-term spending change. More stable than 1-month momentum.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">acceleration_count</td>
+                    <td class="feature-type">Float</td>
+                    <td>Second derivative (acceleration) of transaction counts: change in momentum</td>
+                    <td>Rate of change in activity trend. Negative acceleration with negative momentum = accelerating decline (high risk).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Volatility & Stability Features (5 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">volatility_count</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Standard deviation of month-over-month percentage changes in transaction counts</td>
+                    <td>Activity volatility. High volatility may indicate unstable engagement patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">volatility_sum</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Standard deviation of month-over-month percentage changes in transaction amounts</td>
+                    <td>Spending volatility. High volatility suggests inconsistent financial behavior.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">cv_count</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Coefficient of variation: std / mean of transaction counts across 3 months</td>
+                    <td>Activity stability. High CV = high variability relative to mean (unstable).</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">cv_sum</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Coefficient of variation: std / mean of transaction amounts across 3 months</td>
+                    <td>Spending stability. High CV indicates inconsistent spending patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">stability_count</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Stability metric: 1 / (1 + cv_count). Inverse of coefficient of variation.</td>
+                    <td>Activity stability score. Values close to 1 = very stable, close to 0 = very unstable.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">stability_sum</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Stability metric: 1 / (1 + cv_sum). Inverse of coefficient of variation.</td>
+                    <td>Spending stability score. Stable customers are less likely to churn.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Drawdown & Recovery Features (4 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">max_drawdown_count</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Maximum drawdown: largest drop from peak transaction count, normalized by peak</td>
+                    <td>Worst activity decline. Values close to 1 indicate complete drop from peak (high risk).</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">max_drawdown_sum</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Maximum drawdown: largest drop from peak transaction amount, normalized by peak</td>
+                    <td>Worst spending decline. Large drawdowns signal significant financial disengagement.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recovery_count</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Recovery metric: (current - min) / (max - min) for transaction counts</td>
+                    <td>Recovery from low point. Values close to 1 = recovered to peak; close to 0 = at minimum (risk).</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">recovery_sum</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Recovery metric: (current - min) / (max - min) for transaction amounts</td>
+                    <td>Spending recovery. Low recovery values indicate sustained low spending.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Statistical Moments & Autocorrelation (4 features)</h3>
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">skewness_count</td>
+                    <td class="feature-type">Float</td>
+                    <td>Skewness (third moment) of transaction counts across 3 months</td>
+                    <td>Distribution asymmetry. Positive = right-skewed (few high months), negative = left-skewed (declining pattern).</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">kurtosis_count</td>
+                    <td class="feature-type">Float</td>
+                    <td>Kurtosis (fourth moment) of transaction counts across 3 months</td>
+                    <td>Distribution tail heaviness. High kurtosis = extreme values (volatile pattern).</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">autocorr_count</td>
+                    <td class="feature-type">Float (-1 to 1)</td>
+                    <td>Autocorrelation: correlation between consecutive months' transaction counts</td>
+                    <td>Temporal dependency. Positive = consistent patterns, negative = alternating patterns (unstable).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Note on Advanced Features:</strong> These features are inspired by financial time-series analysis and ARIMA modeling. 
+        They capture complex temporal patterns that simple aggregations miss, such as accelerating declines, recovery patterns, and volatility regimes.</p>
+    </div>
+
+    <!-- SECTION 4: Advanced Geo Features -->
+    <div class="section" id="section4">
+        <h2>Section 4: Advanced Geographic Features (9 features)</h2>
+        
+        <div class="window-info">
+            <strong>Lookback Window:</strong> Fixed 3-month rolling window [ref_month-2, ref_month-1, ref_month]
+            <br><strong>Methodology:</strong> These features analyze temporal patterns, diversity, and mobility in geographic behavior
+        </div>
+
+        <table class="feature-table">
+            <thead>
+                <tr>
+                    <th>Feature Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Business Interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="feature-name">geo_morning_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of geo events occurring between 6 AM - 12 PM</td>
+                    <td>Morning activity pattern. Changes may indicate schedule shifts or lifestyle changes.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_evening_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of geo events occurring between 6 PM - 12 AM</td>
+                    <td>Evening activity pattern. May correlate with work schedules or social patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_night_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of geo events occurring between 12 AM - 6 AM</td>
+                    <td>Night activity pattern. Unusual night activity may indicate lifestyle changes or travel.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_weekend_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Proportion of geo events occurring on weekends (Saturday/Sunday)</td>
+                    <td>Weekend engagement. Changes may reflect work schedule or lifestyle shifts.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_hour_std</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Standard deviation of hours of day when geo events occur</td>
+                    <td>Activity timing variability. Low std = consistent schedule, high std = irregular patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_months_active</td>
+                    <td class="feature-type">Integer (0-3)</td>
+                    <td>Number of months with at least one geo event in the 3-month window</td>
+                    <td>Consistency of location tracking. Lower values may indicate reduced app usage or privacy settings.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_diversity_ratio</td>
+                    <td class="feature-type">Float (0-1)</td>
+                    <td>Number of unique geohash_5 locations / total geo events</td>
+                    <td>Location diversity per event. High values = exploring many places; low = staying in few places.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_mobility</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Number of unique geohash_5 locations / number of months active</td>
+                    <td>Mobility rate. High values = frequent location changes; low = stable location patterns.</td>
+                </tr>
+                <tr>
+                    <td class="feature-name">geo_entropy</td>
+                    <td class="feature-type">Float (>=0)</td>
+                    <td>Entropy approximation: log2(unique_locations + 1) * diversity_ratio</td>
+                    <td>Location distribution entropy. Higher values = more uniform distribution across locations (explorer behavior).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Note on Advanced Geo Features:</strong> These features capture behavioral patterns in geographic activity that may signal churn risk. 
+        For example, sudden changes in timing patterns (morning/evening ratios) or mobility (diversity, entropy) may indicate lifestyle changes, 
+        relocation, or reduced engagement with location-based services.</p>
+    </div>
+
+    <!-- Summary -->
+    <div class="section">
+        <h2>Feature Summary</h2>
+        <div class="summary-box">
+            <strong>Total Features: 71</strong>
+            <ul>
+                <li><strong>Transaction Features:</strong> 20 (current month + recent 3 months)</li>
+                <li><strong>Dialog Features:</strong> 13 (count, months, embeddings)</li>
+                <li><strong>Geographic Basic Features:</strong> 7 (count, diversity, concentration)</li>
+                <li><strong>Advanced Transaction Features:</strong> 22 (trends, momentum, volatility, drawdown, statistics)</li>
+                <li><strong>Advanced Geographic Features:</strong> 9 (temporal patterns, diversity, mobility, entropy)</li>
+            </ul>
+        </div>
+
+        <h3>Key Design Principles</h3>
+        <ul>
+            <li><strong>Fixed Window:</strong> All features use a consistent 3-month rolling window to avoid temporal confounds</li>
+            <li><strong>No Data Leakage:</strong> Features only use data from months <= reference_month (no future information)</li>
+            <li><strong>Normalization:</strong> Many features are normalized (ratios, percentages) to handle scale differences</li>
+            <li><strong>Missing Data:</strong> Clients without data in a source (e.g., dialog, geo) have features set to 0</li>
+            <li><strong>Temporal Patterns:</strong> Advanced features capture trends, momentum, and volatility that simple aggregations miss</li>
+        </ul>
+    </div>
+
+</body>
+</html>
+

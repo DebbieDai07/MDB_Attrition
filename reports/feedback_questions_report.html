@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churn Prediction - Feedback Questions</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .question { 
+            background: #667eea; 
+            color: white; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 25px 0 10px 0;
+            font-weight: bold;
+        }
+        .short-answer {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .details summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #3498db;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        th { background: #34495e; color: white; padding: 10px; text-align: left; }
+        td { padding: 8px 10px; border-bottom: 1px solid #ddd; }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .example-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Feedback Questions - Answers</h1>
+
+        <!-- QUESTION 1 -->
+        <div class="question">Q1: Why not using 2022-04 for features?</div>
+        
+        <div class="short-answer">
+            <strong>Short Answer:</strong> Features must include the reference month (July) as it's the most recent signal. 
+            With a fixed 3-month window, this means May-Jun-Jul for features, not Apr-May-Jun.
+        </div>
+
+        <div class="example-box">
+            <strong>Example (Reference Month = 2022-07):</strong>
+            <div class="code">
+Baseline:  Apr, May, Jun  --> Average = historical normal
+Features:  May, Jun, Jul  --> Recent trend + current month  
+Churn:     Aug, Sep, Oct  --> Did activity drop < 20% of baseline?
+
+Why not Apr in features?
+- We want features to include July (current month = strongest signal)
+- Fixed 3-month window = May, Jun, Jul
+- April is used for baseline only
+            </div>
+        </div>
+
+        <details class="details">
+            <summary>Click for detailed explanation</summary>
+            <p><strong>Design Principle:</strong></p>
+            <ul>
+                <li>Baseline = historical average (3 months BEFORE reference)</li>
+                <li>Features = recent activity (3 months INCLUDING reference)</li>
+                <li>The reference month is the most important predictor</li>
+                <li>May/June appear in both but serve different purposes (average vs trend)</li>
+            </ul>
+        </details>
+
+        <!-- QUESTION 2 -->
+        <div class="question">Q2: Are train/test populations similar?</div>
+        
+        <div class="short-answer">
+            <strong>Short Answer:</strong> Yes. Churn rates are similar (Train: 9.25%, Test: 9.84%). 
+            No client overlap. No temporal overlap.
+        </div>
+
+        <table>
+            <tr><th>Metric</th><th>Train</th><th>Test</th></tr>
+            <tr><td>Samples</td><td>202,357</td><td>34,160</td></tr>
+            <tr><td>Churn Rate</td><td>9.25%</td><td>9.84%</td></tr>
+            <tr><td>Months</td><td>2022-05, 06, 07</td><td>2022-08, 09</td></tr>
+            <tr><td>Client Overlap</td><td colspan="2" style="text-align:center">None (different folds)</td></tr>
+        </table>
+
+        <details class="details">
+            <summary>Click for feature distribution comparison</summary>
+            <table>
+                <tr><th>Feature</th><th>Train Mean</th><th>Test Mean</th><th>Diff %</th></tr>
+                <tr><td>recent_trx_amount_sum</td><td>36.6M</td><td>26.2M</td><td>-28%</td></tr>
+                <tr><td>curr_trx_amount_sum</td><td>11.8M</td><td>8.8M</td><td>-25%</td></tr>
+                <tr><td>recent_trx_amount_mean</td><td>397K</td><td>360K</td><td>-9%</td></tr>
+                <tr><td>momentum_sum_2m</td><td>8,706</td><td>531</td><td>-94%</td></tr>
+            </table>
+            <p><em>Note: Feature differences are expected with temporal split. Churn rates remain stable.</em></p>
+        </details>
+
+        <!-- QUESTION 3 -->
+        <div class="question">Q3: Detailed metrics by reference month?</div>
+        
+        <div class="short-answer">
+            <strong>Short Answer:</strong> Both models show consistent AUC ~0.91 across all months. 
+            Performance is stable between train and test.
+        </div>
+
+        <p><strong>LightGBM:</strong></p>
+        <table>
+            <tr><th>Set</th><th>Month</th><th>N</th><th>Churn%</th><th>AUC</th><th>F1</th></tr>
+            <tr><td>Train</td><td>2022-05</td><td>67K</td><td>8.9%</td><td>0.913</td><td>0.560</td></tr>
+            <tr><td>Train</td><td>2022-06</td><td>67K</td><td>9.3%</td><td>0.914</td><td>0.555</td></tr>
+            <tr><td>Train</td><td>2022-07</td><td>68K</td><td>9.5%</td><td>0.917</td><td>0.566</td></tr>
+            <tr><td>Test</td><td>2022-08</td><td>17K</td><td>9.6%</td><td>0.915</td><td>0.581</td></tr>
+            <tr><td>Test</td><td>2022-09</td><td>17K</td><td>10.0%</td><td>0.913</td><td>0.579</td></tr>
+        </table>
+
+        <p><strong>TCN:</strong></p>
+        <table>
+            <tr><th>Set</th><th>Month</th><th>N</th><th>Churn%</th><th>AUC</th><th>F1</th></tr>
+            <tr><td>Train</td><td>2022-05</td><td>67K</td><td>8.9%</td><td>0.976</td><td>0.774</td></tr>
+            <tr><td>Train</td><td>2022-06</td><td>67K</td><td>9.3%</td><td>0.966</td><td>0.713</td></tr>
+            <tr><td>Train</td><td>2022-07</td><td>68K</td><td>9.5%</td><td>0.935</td><td>0.598</td></tr>
+            <tr><td>Test</td><td>2022-08</td><td>17K</td><td>9.6%</td><td>0.964</td><td>0.717</td></tr>
+            <tr><td>Test</td><td>2022-09</td><td>17K</td><td>10.0%</td><td>0.907</td><td>0.587</td></tr>
+        </table>
+
+        <!-- QUESTION 4 -->
+        <div class="question">Q4: How did you tune hyperparameters?</div>
+        
+        <div class="short-answer">
+            <strong>Short Answer:</strong> LightGBM used default parameters. TCN used random search with 30 configurations.
+        </div>
+
+        <p><strong>LightGBM:</strong> Default parameters (learning_rate=0.05, num_leaves=31, early_stopping=50 rounds)</p>
+
+        <p><strong>TCN:</strong> Random search over 30 configurations</p>
+        <table>
+            <tr><th>Parameter</th><th>Search Space</th><th>Best Value</th></tr>
+            <tr><td>hidden_dim</td><td>[32, 64, 128]</td><td>64</td></tr>
+            <tr><td>num_layers</td><td>[2, 3, 4]</td><td>3</td></tr>
+            <tr><td>kernel_size</td><td>[2, 3, 5]</td><td>3</td></tr>
+            <tr><td>dropout</td><td>[0.1, 0.2, 0.3]</td><td>0.3</td></tr>
+            <tr><td>learning_rate</td><td>[0.001, 0.0005]</td><td>0.001</td></tr>
+        </table>
+        <p><em>Best validation AUC: 0.9255 | Test AUC: 0.8933</em></p>
+
+        <!-- QUESTION 5 -->
+        <div class="question">Q5: Did TCN exclude geo/dialogue features?</div>
+        
+        <div class="short-answer">
+            <strong>Short Answer:</strong> No, they are INCLUDED. Ablation study showed minimal impact (-0.0005 to -0.0037 AUC), 
+            but we kept them for interpretability.
+        </div>
+
+        <table>
+            <tr><th>Feature Group</th><th>Impact on AUC</th><th>Interpretation</th></tr>
+            <tr><td>Current Month</td><td>+0.038</td><td>Very important (removing hurts)</td></tr>
+            <tr><td>Recent 3 Months</td><td>+0.034</td><td>Very important (removing hurts)</td></tr>
+            <tr><td>Geo</td><td>-0.0005</td><td>Minimal impact (kept anyway)</td></tr>
+            <tr><td>Dialogue</td><td>-0.0037</td><td>Minimal impact (kept anyway)</td></tr>
+        </table>
+        <p><em>Decision: Kept geo/dialogue features since computational cost is minimal and they may help in edge cases.</em></p>
+
+        <hr style="margin-top: 40px;">
+        <p style="text-align: center; color: #7f8c8d; font-size: 14px;">
+            All detailed results saved to: churn_detection/datasets/features_v3/
+        </p>
+    </div>
+</body>
+</html>
